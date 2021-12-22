@@ -52,7 +52,6 @@ function loadData(){
                             data-name="${employee.name}"
                             data-position="${employee.position}"
                             data-video_greeting_link="${employee.video_greeting_link}"
-                            data-video_greeting_text="${employee.video_greeting_text}"
                             data-gcash_number="${employee.gcash_number}"
                             data-gcash_qr_img="${employee.gcashqr_img}"
                             >
@@ -99,6 +98,7 @@ function closeGreetingModal(){
     video_greetings.pause();
     let play_button = $("#play_video_btn");
     background_music.play();
+    background_music.muted = false;
     video_greetings.currentTime = 0;
     // $("#qrcode").html("");
     // qrcode.clear();
