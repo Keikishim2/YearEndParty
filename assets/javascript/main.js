@@ -1,12 +1,8 @@
 import employee_data from "./data.js";
 let video_greetings = document.getElementById("video_greetings");
 let background_music = document.getElementById("background_music");
-let qrcode;
+// let qrcode;
 $(document).ready(function(){
-        /* particlesJS.load(@dom-id, @path-json, @callback (optional)); */
-    // particlesJS.load('particles-js', './particles.json', function() {
-    //     console.log('callback - particles.js config loaded');
-    // });
 
     $("body")
             .on("mouseover", ".icon", function(){
@@ -19,23 +15,33 @@ $(document).ready(function(){
             .on("click", ".open_greetings_modal_ivan", function(){
                 $("#greetings_modal_ivan").modal("show");
             })
+            .on("click", "#stop_video_btn", function(){
+                let play_button = $("#play_video_btn");
+
+                video_greetings.currentTime = 0;
+                video_greetings.pause();
+                play_button.find(".fa").removeClass("fa-pause").addClass("fa-play");
+                
+            })
 
             .on("hidden.bs.modal", "#greetings_modal" , closeGreetingModal)
-            .on("click", "#play_again_btn", playAgainVideoGreetings)
+            .on("click", "#play_video_btn", playVideoGreetings)
+            .on("click", "#play_automatic", autoPlayBackgroundMusic)
+            .on("change", "#progress_bar", setVideoProgress)
+            
 
-    autoPlayBackgroundMusic(); // patanggal nalang para mag auto play
-
-
-    video_greetings.onended = endGreetingAction
+    video_greetings.onended = endGreetingAction;
+    video_greetings.ontimeupdate = updateVideoProgressBar;
+    background_music.onended = rewindBackgroundMusic;
     loadData();
+
+    $("#play_automatic").trigger("click");
+
 });
 
-
 function autoPlayBackgroundMusic(){
-    
     background_music.play();
 }
-
 
 function loadData(){
 
@@ -48,63 +54,107 @@ function loadData(){
                             data-video_greeting_link="${employee.video_greeting_link}"
                             data-video_greeting_text="${employee.video_greeting_text}"
                             data-gcash_number="${employee.gcash_number}"
+                            data-gcash_qr_img="${employee.gcashqr_img}"
                             >
-                                <img src="assets/images/${employee.nickname}.png" alt="${employee.name}">
+                                <img src="${employee.img_url}" alt="${employee.name}">
                             </div>`;
     }
-    $(".circle").html(employee_icon).append(employee_icon);
+    $(".circle").html(employee_icon);
 }
-
 
 
 function openGreetingModal(){
     let greetings_modal = $("#greetings_modal");
     let data_details = $(this);
+    let progress_bar = $("#progress_bar");
+
+   
 
     background_music.pause();
-
     greetings_modal.modal("show");
-    greetings_modal.find("#play_again_btn").attr("disabled",true);
-    
 
     greetings_modal.find("#name").text(data_details.attr("data-name"));
     greetings_modal.find("#video_greetings").attr("src", data_details.attr("data-video_greeting_link"));
-    greetings_modal.find("#video_greeting_text").text(data_details.attr("data-video_greeting_text"));
-    video_greeting_text
+    greetings_modal.find("#gcash_qr_img").attr("src", data_details.attr("data-gcash_qr_img"));
+    greetings_modal.find("#gcash_qr_img").attr("alt", data_details.attr("data-gcash_number"));
+    greetings_modal.find("#gcash_qr_img").attr("title", data_details.attr("data-gcash_number"));
+    // greetings_modal.find("#video_greeting_text").text(data_details.attr("data-video_greeting_text"));
 
-  
-    let play_vid = video_greetings.play();
+    // qrcode = new QRCode("qrcode", {
+    //     text: data_details.attr("data-gcash_number"),
+    //     width: 128,
+    //     height: 128,
+    //     colorDark : "#000000",
+    //     colorLight : "#ffffff",
+    //     correctLevel : QRCode.CorrectLevel.H
+    // });
 
-    play_vid.then(function() {
-        // Automatic playback started!
-        
-      }).catch(function(error) {
-        // Automatic playback failed.
-        // Show a UI element to let the user manually start playback.
-      });
-    qrcode = new QRCode("qrcode", {
-        text: data_details.attr("data-gcash_number"),
-        width: 128,
-        height: 128,
-        colorDark : "#000000",
-        colorLight : "#ffffff",
-        correctLevel : QRCode.CorrectLevel.H
-    });
-   
+   setTimeout(function(){
+       /* set progress bar to 0 */
+       progress_bar.val(0);
+   },200);
 }
 
 function closeGreetingModal(){
     video_greetings.pause();
+    let play_button = $("#play_video_btn");
     background_music.play();
     video_greetings.currentTime = 0;
-    $("#qrcode").html("");
-    qrcode.clear();
+    // $("#qrcode").html("");
+    // qrcode.clear();
+
+    play_button.find(".fa").removeClass("fa-pause").addClass("fa-play");
 }
 
-function playAgainVideoGreetings(){
-    video_greetings.play();
+function playVideoGreetings(){
+    let play_button = $("#play_video_btn");
+
+    if(video_greetings.paused){
+        video_greetings.play();
+        play_button.find(".fa").removeClass("fa-play").addClass("fa-pause");
+    }
+    else{
+        video_greetings.pause();
+        play_button.find(".fa").removeClass("fa-pause").addClass("fa-play");
+    }
+    
 }
 
 function endGreetingAction(){
-    $("#greetings_modal").find("#play_again_btn").attr("disabled",false);
+    let play_button = $("#play_video_btn");
+
+    play_button.find(".fa").removeClass("fa-pause").addClass("fa-play");
+}
+
+
+function rewindBackgroundMusic(){
+    background_music.currentTime = 0;
+    background_music.play();
+}
+
+function updateVideoProgressBar(){
+    let progress_bar = $("#progress_bar");
+
+    progress_bar.val((video_greetings.currentTime / video_greetings.duration) * 100);
+
+    //get minutes
+    let mins = Math.floor(video_greetings.currentTime / 60);
+    if(mins < 10){
+        mins = "0" + String(mins);
+    }
+  
+  
+    //get seconds
+    let secs = Math.floor(video_greetings.currentTime % 60);
+    if(secs < 10){
+        secs = "0" + String(secs);
+    }
+  
+    $("#timestamp").html(`${mins}:${secs}`);
+}
+
+
+function setVideoProgress(){
+    let progress_bar = $("#progress_bar");
+    video_greetings.currentTime = (+progress_bar.val() * video_greetings.duration) / 100;
 }
